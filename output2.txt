@@ -1,0 +1,70 @@
+### Fold 0
+----------------------Focal Loss----------------------
+Train Precision: [0, 0, 0, 0, 0, 0.6, 0, 0, 0]
+Train Recall: [0, 0, 0, 0, 0, 1.0, 0, 0, 0]
+Overall Train Precision: 0.6
+Overall Train Recall: 0.3
+
+Validation Precision: [0, 0, 0, 0, 0, 0.5806451612903226, 0, 0, 0]
+Validation Recall: [0, 0, 0, 0, 0, 1.0, 0, 0, 0]
+Overall Validation Precision: 0.5806451612903226
+Overall Validation Recall: 0.29347826086956524
+
+----------------------Cross Entropy Loss----------------------
+Train Precision: [0, 0, 0, 0, 0, 0.6, 0, 0, 0]
+Train Recall: [0, 0, 0, 0, 0, 1.0, 0, 0, 0]
+Overall Train Precision: 0.6
+Overall Train Recall: 0.3
+
+Validation Precision: [0, 0, 0, 0, 0, 0.5806451612903226, 0, 0, 0]
+Validation Recall: [0, 0, 0, 0, 0, 1.0, 0, 0, 0]
+Overall Validation Precision: 0.5806451612903226
+Overall Validation Recall: 0.29347826086956524
+
+----------------------Cross Entropy Loss----------------------
+Train Precision: [0, 0.52, 0, 0.14666666666666667, 0.18666666666666668, 0.6, 0, 0, 0.30666666666666664]
+Train Recall: [0, 1.0, 0, 1.0, 1.0, 1.0, 0, 0, 1.0]
+Overall Train Precision: 0.352
+Overall Train Recall: 0.88
+
+Validation Precision: [0, 0.44086021505376344, 0, 0.16129032258064516, 0.1827956989247312, 0.5806451612903226, 0, 0, 0.3225806451612903]
+Validation Recall: [0, 1.0, 0, 1.0, 1.0, 1.0, 0, 0, 1.0]
+Overall Validation Precision: 0.33763440860215055
+Overall Validation Recall: 0.8532608695652174
+
+### Fold 1
+----------------------Focal Loss----------------------
+Train Precision: [0, 0.52, 0, 0.14666666666666667, 0.18666666666666668, 0.6, 0, 0, 0.30666666666666664]
+Train Recall: [0, 1.0, 0, 1.0, 1.0, 1.0, 0, 0, 1.0]
+Overall Train Precision: 0.352
+Overall Train Recall: 0.88
+
+Validation Precision: [0, 0.44086021505376344, 0, 0.16129032258064516, 0.1827956989247312, 0.5806451612903226, 0, 0, 0.3225806451612903]
+Validation Recall: [0, 1.0, 0, 1.0, 1.0, 1.0, 0, 0, 1.0]
+Overall Validation Precision: 0.33763440860215055
+Overall Validation Recall: 0.8532608695652174
+
+### Fold 1
+----------------------Focal Loss----------------------
+Train Precision: [0.03333333333333333, 0, 0, 0, 0, 0, 0, 0, 0]
+Train Recall: [1.0, 0, 0, 0, 0, 0, 0, 0, 0]
+Overall Train Precision: 0.03333333333333333
+Overall Train Recall: 0.016304347826086956
+
+Validation Precision: [0.02, 0, 0, 0, 0, 0, 0, 0, 0]
+Validation Recall: [1.0, 0, 0, 0, 0, 0, 0, 0, 0]
+Overall Validation Precision: 0.02
+Overall Validation Recall: 0.006666666666666667
+
+----------------------Cross Entropy Loss----------------------
+Train Precision: [0.03333333333333333, 0, 0, 0, 0, 0, 0, 0, 0]
+Train Recall: [1.0, 0, 0, 0, 0, 0, 0, 0, 0]
+Overall Train Precision: 0.03333333333333333
+Overall Train Recall: 0.016304347826086956
+
+Validation Precision: [0.02, 0, 0, 0, 0, 0, 0, 0, 0]
+Validation Recall: [1.0, 0, 0, 0, 0, 0, 0, 0, 0]
+Overall Validation Precision: 0.02
+Overall Validation Recall: 0.006666666666666667
+
+----------------------Cross Entropy Loss----------------------
