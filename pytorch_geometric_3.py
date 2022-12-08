@@ -1,4 +1,4 @@
-# real classification
+# class 6 classification
 # use pytorch geometric
 
 import pandas as pd
@@ -471,6 +471,7 @@ import torch.nn as nn
 from dgl.nn import GraphConv
 from torch_geometric.nn import GCNConv
 from torch_geometric.data import Data
+from torch_geometric.utils import add_self_loops
 import torch.nn.functional as F
 import math
 import matplotlib.pyplot as plt
@@ -620,7 +621,7 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
     # labels = g.ndata['labels']
     labels = g.y
     labels_shape = labels.shape
-    epoch = 100
+    epoch = 5000
     focal_loss = FocalLoss()
 
 
@@ -642,11 +643,13 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
         # Forward
         final_emb, final_emb_clone = model(g, features)
         
+        # for class 6 classification 
         labels = np.reshape(labels, (len(labels), 1))
-        # if e == epoch-1:
-        #     print(f"Final emb: {final_emb}")
-        #     # print(f"Final emb clone: {final_emb_clone}")
-        #     print(f"Labels: {labels}")
+
+        if e == epoch-1:
+            # print(f"Final emb: {final_emb}")
+            print(f"Final emb clone: {final_emb_clone}")
+            # print(f"Labels: {labels}")
 
         # Compute loss
         if loss_function == 'focal_loss':
@@ -875,7 +878,8 @@ def validate(g, model, loss_function,fold=0, fold_no=0):
     # labels = g.ndata['labels']
     labels = g.y
     final_emb, final_emb_clone = model(g, features)
-    
+
+    # for class 6 classification
     labels = np.reshape(labels, (len(labels), 1))
 
     for row in range(final_emb_clone.shape[0]):
@@ -917,6 +921,8 @@ def test(g, model):
     final_emb, final_emb_clone = model(g, features)
     # print(f'final_emb_clone: {final_emb_clone}')
     # print(f'labels: {labels}')
+
+    # for class 6 classification
     labels = np.reshape(labels, (len(labels), 1))
 
 
@@ -1014,29 +1020,61 @@ split_len = len(node_labels)//4
 
 for i in range(k):
     if i == 0:
-        current_fold_train_features = features[split_len:]
-        current_fold_validation_features = features[:split_len]
-        current_fold_train_labels = node_labels[split_len:]
-        current_fold_validation_labels = node_labels[:split_len]
-    elif i == 1:
-        current_fold_train_features = np.concatenate((features[0:split_len], features[split_len+split_len:]))
-        current_fold_validation_features = features[split_len:split_len+split_len]
-        current_fold_train_labels = np.concatenate((node_labels[0:split_len], node_labels[split_len+split_len:]))
-        current_fold_validation_labels = node_labels[split_len:split_len+split_len]
-    elif i == 2:
-        current_fold_train_features = np.concatenate((features[0:split_len+split_len], features[split_len+split_len+split_len:]))
-        current_fold_validation_features = features[split_len+split_len:split_len+split_len+split_len]
-        current_fold_train_labels = np.concatenate((node_labels[0:split_len+split_len], node_labels[split_len+split_len+split_len:]))
-        current_fold_validation_labels = node_labels[split_len+split_len:split_len+split_len+split_len]
-    elif i == 3:
-        current_fold_train_features = features[0:split_len+split_len+split_len]
-        current_fold_validation_features = features[split_len+split_len+split_len:]
-        current_fold_train_labels = node_labels[0:split_len+split_len+split_len]
-        current_fold_validation_labels = node_labels[split_len+split_len+split_len:]
- 
-
+        validation_min_index=0
+        validation_max_index=split_len-1
+    elif i == k-1:
+        validation_min_index=i*split_len
+        validation_max_index=len(features)
+    else:
+        validation_min_index=i*split_len
+        validation_max_index=validation_min_index+(split_len-1)
     
-   
+    current_fold_validation_list1 = []
+    current_fold_validation_list2 = []
+    current_fold_train_list1 = []
+    current_fold_train_list2 = []
+
+    # node list 1 & node list 2
+    for j in range(len(node_list1)):
+        if validation_min_index <= node_list1[j] <= validation_max_index and validation_min_index <= node_list2[j] <= validation_max_index:
+            current_fold_validation_list1.append(node_list1[j])
+            current_fold_validation_list2.append(node_list2[j])
+        else:
+            current_fold_train_list1.append(node_list1[j])
+            current_fold_train_list2.append(node_list2[j])
+    
+    missing_train_nodes_index = []
+    for j in range(len(features)):
+        if j < validation_min_index or j > validation_max_index:
+            if j not in current_fold_train_list1:
+                missing_train_nodes_index.append(j)
+
+    missing_validation_nodes_index = []  
+    for j in range(validation_min_index, validation_max_index):
+        if j not in current_fold_validation_list1:
+            missing_validation_nodes_index.append(j)
+
+    total_train_nodes_index = list(set(list(set(missing_train_nodes_index)) + list(set(current_fold_train_list1))))
+    total_validation_nodes_index = list(set(list(set(missing_validation_nodes_index)) + list(set(current_fold_validation_list1))))
+
+    current_fold_validation_features = []
+    current_fold_validation_labels = []
+    current_fold_train_features = []
+    current_fold_train_labels = []
+    
+    # features
+    for j in range(len(features)):
+        if j in total_validation_nodes_index:
+            current_fold_validation_features.append(features[j])
+        if j in total_train_nodes_index:
+            current_fold_train_features.append(features[j])
+
+    # labels
+    for j in range(len(node_labels)):
+        if j in total_validation_nodes_index:
+            current_fold_validation_labels.append(node_labels[j])
+        if j in total_train_nodes_index:
+            current_fold_train_labels.append(node_labels[j])
 
 
     # change validation index
@@ -1065,47 +1103,28 @@ for i in range(k):
         current_fold_train_list1[j] = change_train_index_dict[current_fold_train_list1[j]]
         current_fold_train_list2[j] = change_train_index_dict[current_fold_train_list2[j]]
 
-    print(f'change_train_index_dict: {change_train_index_dict}')
-    print(f'change_validation_index_dict: {change_validation_index_dict}')
-    exit()
+
     # to numpy array
     current_fold_validation_features = np.array(current_fold_validation_features)
     current_fold_validation_labels = np.array(current_fold_validation_labels)
     current_fold_train_features = np.array(current_fold_train_features)
     current_fold_train_labels = np.array(current_fold_train_labels)
 
-    # these 2 are for class 6 classificaitons    
-    # current_fold_validation_labels = current_fold_validation_labels[:,5]
-    # current_fold_train_labels = current_fold_train_labels[:,5]
-
-    # extract each fatures
-    current_fold_train_steps = current_fold_train_features[:, 0]
-    current_fold_train_distance = current_fold_train_features[:, 1]
-    current_fold_train_runDistance = current_fold_train_features[:, 2]
-    current_fold_train_calories = current_fold_train_features[:, 3]
-    current_fold_train_heartbeat = current_fold_train_features[:, 4]
-    current_fold_train_sleep = current_fold_train_features[:, 5]
-    current_fold_train_spo2 = current_fold_train_features[:, 6]
-
-    current_fold_validation_steps = current_fold_validation_features[:, 0]
-    current_fold_validation_distance = current_fold_validation_features[:, 1]
-    current_fold_validation_runDistance = current_fold_validation_features[:, 2]
-    current_fold_validation_calories = current_fold_validation_features[:, 3]
-    current_fold_validation_heartbeat = current_fold_validation_features[:, 4]
-    current_fold_validation_sleep = current_fold_validation_features[:, 5]
-    current_fold_validation_spo2 = current_fold_validation_features[:, 6]
+    current_fold_validation_labels = current_fold_validation_labels[:,5]
+    current_fold_train_labels = current_fold_train_labels[:,5]
+    
 
 
     # train
     train_edge_index = torch.tensor(([current_fold_train_list1, current_fold_train_list2]), dtype=torch.long)
+    train_edge_index = add_self_loops(edge_index = train_edge_index)[0]
     train_graph = Data(x = torch.from_numpy(current_fold_train_features).float(), edge_index = train_edge_index, y = torch.from_numpy(current_fold_train_labels).float())
-    train_graph.add_self_loops(edge_index = train_edge_index)
 
     validation_edge_index = torch.tensor(([current_fold_validation_list1, current_fold_validation_list2]), dtype=torch.long)
+    validation_edge_index = add_self_loops(edge_index = validation_edge_index)[0]
     validation_graph = Data(x = torch.from_numpy(current_fold_validation_features).float(), edge_index = validation_edge_index, y = torch.from_numpy(current_fold_validation_labels).float())
-    validation_graph.add_self_loops(edge_index = validation_edge_index)
 
-    model = GCN(7, 9)
+    model = GCN(7, 1)
     train(g=train_graph, validate_g =validation_graph, model=model, loss_function = 'ce', fold=k, fold_no=i)
 
 # ######################### test# #####################################################
@@ -1113,14 +1132,12 @@ print(f'Testing')
 # this is for class 6 classification
 # node_labels = node_labels[:,5]
 train_edge_index_2 = torch.tensor(([node_list1, node_list2]), dtype=torch.long)
+train_edge_index_2 = add_self_loops(edge_index = train_edge_index_2)[0]
 train_graph_2 = Data(x = torch.from_numpy(features).float(), edge_index = train_edge_index_2, y = torch.from_numpy(node_labels).float())
-train_graph_2.add_self_loops(edge_index = train_edge_index_2)
 
 
-# model1_2 = GCN(7, 1)
-# train(g = train_graph_2, model = model1_2, loss_function = 'focal_loss', to_print=False, testing=True)
-model2_2 = GCN(7, 9)
-train(g = train_graph_2, model = model2_2, loss_function = 'ce', to_print=False, testing=True)
+model2_2 = GCN(7, 1)
+# train(g = train_graph_2, model = model2_2, loss_function = 'ce', to_print=False, testing=True)
 
 
 # test
@@ -1144,6 +1161,8 @@ for i in range(features_array.shape[0]):
     features_array[i,6] = features_array[i,6]/100
     
 test_edge_index = torch.tensor(([0,1,0,3,1,2], [1,0,3,0,2,1]), dtype=torch.long)
+test_edge_index = add_self_loops(edge_index = test_edge_index)[0]
+
 test_label = np.array([
 [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
@@ -1152,22 +1171,17 @@ test_label = np.array([
 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 ])
 test_graph = Data(x = torch.from_numpy(features_array).float(), edge_index = test_edge_index, y = torch.from_numpy(test_label).float())
-test_graph.add_self_loops(edge_index = train_edge_index_2)
 
 
 with open('output3.txt', 'a') as f:
     f.writelines(f"\n================Testing================")    
     f.close()
-# print(f'----------------------Focal Loss----------------------')
-# with open('output3.txt', 'a') as f:
-#     f.writelines(f'\n----------------------Focal Loss----------------------\n')
-#     f.close() 
-# test(test_graph,model1_2)
+
 
 print(f'----------------------Binary Cross Entropy Loss----------------------')
 with open('output3.txt', 'a') as f:
     f.writelines(f'\n----------------------Binary Cross Entropy Loss----------------------\n')
     f.close() 
-test(test_graph,model2_2)
+# test(test_graph,model2_2)
 
-plt.show()
+# plt.show()

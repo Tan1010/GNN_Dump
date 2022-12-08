@@ -1356,3 +1356,147 @@ Overall Train Recall: 0
 Overall Validation Precision: 0
 Overall Validation Recall: 0
 
+
+================Testing================
+----------------------Binary Cross Entropy Loss----------------------
+Overall Train Precision: 0.5684210526315789
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.4230769230769231
+Overall Validation Recall: 1.0
+
+
+================Testing================
+----------------------Binary Cross Entropy Loss----------------------
+Overall Train Precision: 0.5684210526315789
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.4230769230769231
+Overall Validation Recall: 1.0
+
+
+================Testing================
+----------------------Binary Cross Entropy Loss----------------------
+Overall Train Precision: 0.5684210526315789
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.5454545454545454
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.4230769230769231
+Overall Validation Recall: 1.0
+
+
+================Testing================
+----------------------Binary Cross Entropy Loss----------------------
+Overall Train Precision: 0.5684210526315789
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.5454545454545454
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.5684210526315789
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.4230769230769231
+Overall Validation Recall: 1.0
+
+
+================Testing================
+----------------------Binary Cross Entropy Loss----------------------
+Overall Train Precision: 0.5684210526315789
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.5510204081632653
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.6
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.6506024096385542
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5416666666666666
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.9310344827586207
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 1.0
+Overall Validation Recall: 1.0
+
+
+================Testing================
+----------------------Binary Cross Entropy Loss----------------------
+Overall Train Precision: 0.5806451612903226
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.625
+Overall Validation Recall: 1.0
+
