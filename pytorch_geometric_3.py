@@ -595,7 +595,7 @@ all_validation_recall_ce = []
 
 def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=True, testing=False):
     
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
     tp=0
     fp=0
     tn=0
@@ -621,7 +621,7 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
     # labels = g.ndata['labels']
     labels = g.y
     labels_shape = labels.shape
-    epoch = 5000
+    epoch = 500
     focal_loss = FocalLoss()
 
 
@@ -631,14 +631,15 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
         tn = 0
         fn = 0
 
-        # if (e == 0 or e == epoch-1) and testing==True:
+        # # if (e == 0 or e == epoch-1) and testing==True:
+        # if (e == 0 or e == epoch-1):
         #     print(f"Epoch {e}")
         #     for name, param in model.named_parameters():
         #         if param.requires_grad:
         #             print(name, param.data)
-        #     print(f'Weight 1: {model.conv1.weight.grad}')
-        #     print(f'Weight 2: {model.conv2.weight.grad}')
-        #     print(f'Weight 3: {model.conv3.weight.grad}')
+        # #     print(f'Weight 1: {model.conv1.weight.grad}')
+        # #     print(f'Weight 2: {model.conv2.weight.grad}')
+        # #     print(f'Weight 3: {model.conv3.weight.grad}')
 
         # Forward
         final_emb, final_emb_clone = model(g, features)
@@ -646,10 +647,10 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
         # for class 6 classification 
         labels = np.reshape(labels, (len(labels), 1))
 
-        if e == epoch-1:
-            # print(f"Final emb: {final_emb}")
-            print(f"Final emb clone: {final_emb_clone}")
-            # print(f"Labels: {labels}")
+        # if e == epoch-1:
+        #     # print(f"Final emb: {final_emb}")
+        #     print(f"Final emb clone: {final_emb_clone}")
+        #     # print(f"Labels: {labels}")
 
         # Compute loss
         if loss_function == 'focal_loss':
@@ -915,8 +916,11 @@ def test(g, model):
     test_tn = 0
     test_fn = 0
 
-    features = g.ndata['h']
-    labels = g.ndata['labels']
+    # features = g.ndata['h']
+    # labels = g.ndata['labels']
+    features = g.x
+    labels = g.y
+
     # labels = labels[:, 5]
     final_emb, final_emb_clone = model(g, features)
     # print(f'final_emb_clone: {final_emb_clone}')
@@ -1113,7 +1117,245 @@ for i in range(k):
     current_fold_validation_labels = current_fold_validation_labels[:,5]
     current_fold_train_labels = current_fold_train_labels[:,5]
     
+    current_fold_training_no_pos_label = 0
+    current_fold_training_no_neg_label = 0
+    current_fold_validation_no_pos_label = 0
+    current_fold_validation_no_neg_label = 0
 
+    for j in range(len(current_fold_train_labels)):
+        if current_fold_train_labels[j] == 0.0:
+            current_fold_training_no_neg_label+=1
+        else:
+            current_fold_training_no_pos_label+=1
+            
+    for j in range(len(current_fold_validation_labels)):
+        if current_fold_validation_labels[j] == 0.0:
+            current_fold_validation_no_neg_label+=1
+        else:
+            current_fold_validation_no_pos_label+=1
+    
+    # print(f'Current fold training no of positive label: {current_fold_training_no_pos_label}')
+    # print(f'Current fold training no of negative label: {current_fold_training_no_neg_label}\n')
+    # print(f'Current fold validation no of positive label: {current_fold_validation_no_pos_label}')
+    # print(f'Current fold validation no of negative label: {current_fold_validation_no_neg_label}\n')
+
+    # extract each fatures
+    current_fold_train_steps = current_fold_train_features[:, 0]
+    current_fold_train_distance = current_fold_train_features[:, 1]
+    current_fold_train_runDistance = current_fold_train_features[:, 2]
+    current_fold_train_calories = current_fold_train_features[:, 3]
+    current_fold_train_heartbeat = current_fold_train_features[:, 4]
+    current_fold_train_sleep = current_fold_train_features[:, 5]
+    current_fold_train_spo2 = current_fold_train_features[:, 6]
+
+    current_fold_validation_steps = current_fold_validation_features[:, 0]
+    current_fold_validation_distance = current_fold_validation_features[:, 1]
+    current_fold_validation_runDistance = current_fold_validation_features[:, 2]
+    current_fold_validation_calories = current_fold_validation_features[:, 3]
+    current_fold_validation_heartbeat = current_fold_validation_features[:, 4]
+    current_fold_validation_sleep = current_fold_validation_features[:, 5]
+    current_fold_validation_spo2 = current_fold_validation_features[:, 6]
+
+
+    # training mean & std
+    current_fold_train_steps_mean = np.mean(np.array(current_fold_train_steps))
+    current_fold_train_steps_std = np.std(np.array(current_fold_train_steps))
+
+    current_fold_train_distance_mean = np.mean(np.array(current_fold_train_distance))
+    current_fold_train_distance_std = np.std(np.array(current_fold_train_distance))
+
+    current_fold_train_runDistance_mean = np.mean(np.array(current_fold_train_runDistance))
+    current_fold_train_runDistance_std = np.std(np.array(current_fold_train_runDistance))
+
+    current_fold_train_calories_mean = np.mean(np.array(current_fold_train_calories))
+    current_fold_train_calories_std = np.std(np.array(current_fold_train_calories))
+
+    current_fold_train_heartbeat_mean = np.mean(np.array(current_fold_train_heartbeat))
+    current_fold_train_heartbeat_std = np.std(np.array(current_fold_train_heartbeat))
+
+    current_fold_train_sleep_mean = np.mean(np.array(current_fold_train_sleep))
+    current_fold_train_sleep_std = np.std(np.array(current_fold_train_sleep))
+
+    current_fold_train_spo2_mean = np.mean(np.array(current_fold_train_spo2))
+    current_fold_train_spo2_std = np.std(np.array(current_fold_train_spo2))
+
+
+    # validation mean & std
+    current_fold_validation_steps_mean = np.mean(np.array(current_fold_validation_steps))
+    current_fold_validation_steps_std = np.std(np.array(current_fold_validation_steps))
+
+    current_fold_validation_distance_mean = np.mean(np.array(current_fold_validation_distance))
+    current_fold_validation_distance_std = np.std(np.array(current_fold_validation_distance))
+
+    current_fold_validation_runDistance_mean = np.mean(np.array(current_fold_validation_runDistance))
+    current_fold_validation_runDistance_std = np.std(np.array(current_fold_validation_runDistance))
+
+    current_fold_validation_calories_mean = np.mean(np.array(current_fold_validation_calories))
+    current_fold_validation_calories_std = np.std(np.array(current_fold_validation_calories))
+
+    current_fold_validation_heartbeat_mean = np.mean(np.array(current_fold_validation_heartbeat))
+    current_fold_validation_heartbeat_std = np.std(np.array(current_fold_validation_heartbeat))
+
+    current_fold_validation_sleep_mean = np.mean(np.array(current_fold_validation_sleep))
+    current_fold_validation_sleep_std = np.std(np.array(current_fold_validation_sleep))
+
+    current_fold_validation_spo2_mean = np.mean(np.array(current_fold_validation_spo2))
+    current_fold_validation_spo2_std = np.std(np.array(current_fold_validation_spo2))
+
+    # # print out mean & std
+    # print(f'Mean steps (training): {round(current_fold_train_steps_mean, 4)}')
+    # print(f'Std steps (training): {round(current_fold_train_steps_std, 4)}\n')
+
+    # print(f'Mean distance (training): {round(current_fold_train_distance_mean, 4)}')
+    # print(f'Std distance (training): {round(current_fold_train_distance_std, 4)}\n')
+
+    # print(f'Mean run distance (training): {round(current_fold_train_runDistance_mean, 4)}')
+    # print(f'Std run distance (training): {round(current_fold_train_runDistance_std, 4)}\n')
+
+    # print(f'Mean run calories (training): {round(current_fold_train_calories_mean, 4)}')
+    # print(f'Std run calories (training): {round(current_fold_train_calories_std, 4)}\n')
+
+    # print(f'Mean run heartrate (training): {round(current_fold_train_heartbeat_mean, 4)}')
+    # print(f'Std run heartrate (training): {round(current_fold_train_heartbeat_std, 4)}\n')
+
+    # print(f'Mean run sleep (training): {round(current_fold_train_sleep_mean, 4)}')
+    # print(f'Std run sleep (training): {round(current_fold_train_sleep_std, 4)}\n')
+
+    # print(f'Mean run spo2 (training): {round(current_fold_train_spo2_mean, 4)}')
+    # print(f'Std run spo2 (training): {round(current_fold_train_spo2_std, 4)}\n')
+
+    # print(f'Mean steps (validation): {round(current_fold_validation_steps_mean, 4)}')
+    # print(f'Std steps (validation): {round(current_fold_validation_steps_std, 4)}\n')
+
+    # print(f'Mean distance (validation): {round(current_fold_validation_distance_mean, 4)}')
+    # print(f'Std distance (validation): {round(current_fold_validation_distance_std, 4)}\n')
+
+    # print(f'Mean run distance (validation): {round(current_fold_validation_runDistance_mean, 4)}')
+    # print(f'Std run distance (validation): {round(current_fold_validation_runDistance_std, 4)}\n')
+
+    # print(f'Mean run calories (validation): {round(current_fold_validation_calories_mean, 4)}')
+    # print(f'Std run calories (validation): {round(current_fold_validation_calories_std, 4)}\n')
+
+    # print(f'Mean run heartrate (validation): {round(current_fold_validation_heartbeat_mean, 4)}')
+    # print(f'Std run heartrate (validation): {round(current_fold_validation_heartbeat_std, 4)}\n')
+
+    # print(f'Mean run sleep (validation): {round(current_fold_validation_sleep_mean, 4)}')
+    # print(f'Std run sleep (validation): {round(current_fold_validation_sleep_std, 4)}\n')
+
+    # print(f'Mean run spo2 (validation): {round(current_fold_validation_spo2_mean, 4)}')
+    # print(f'Std run spo2 (validation): {round(current_fold_validation_spo2_std, 4)}\n')
+    if i == 3:
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_train_steps), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_train_steps), color='crimson')
+        plt.xlabel('Steps')
+        plt.ylabel('count')
+        plt.title(f'Histogram Steps (Fold {i+1} - Training)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_train_distance), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_train_distance), color='crimson')
+        plt.xlabel('Distance')
+        plt.ylabel('count')
+        plt.title(f'Histogram Distance (Fold {i+1} - Training)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_train_runDistance), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_train_runDistance), color='crimson')
+        plt.xlabel('Run Distance')
+        plt.ylabel('count')
+        plt.title(f'Histogram Run Distance (Fold {i+1} - Training)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_train_calories), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_train_calories), color='crimson')
+        plt.xlabel('Calories')
+        plt.ylabel('count')
+        plt.title(f'Histogram Calories (Fold {i+1} - Training)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_train_heartbeat), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_train_heartbeat), color='crimson')
+        plt.xlabel('Heartbeat')
+        plt.ylabel('count')
+        plt.title(f'Histogram Heartbeat (Fold {i+1} - Training)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_train_sleep), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_train_sleep), color='crimson')
+        plt.xlabel('Sleep')
+        plt.ylabel('count')
+        plt.title(f'Histogram Sleep (Fold {i+1} - Training)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_train_spo2), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_train_spo2), color='crimson')
+        plt.xlabel('SpO2')
+        plt.ylabel('count')
+        plt.title(f'Histogram SpO2 (Fold {i+1} - Training)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_validation_steps), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_validation_steps), color='crimson')
+        plt.xlabel('Steps')
+        plt.ylabel('count')
+        plt.title(f'Histogram Steps (Fold {i+1} - Validation)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_validation_distance), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_validation_distance), color='crimson')
+        plt.xlabel('Distance')
+        plt.ylabel('count')
+        plt.title(f'Histogram Distance (Fold {i+1} - Validation)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_validation_runDistance), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_validation_runDistance), color='crimson')
+        plt.xlabel('Run Distance')
+        plt.ylabel('count')
+        plt.title(f'Histogram Run Distance (Fold {i+1} - Validation)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_validation_calories), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_validation_calories), color='crimson')
+        plt.xlabel('Calories')
+        plt.ylabel('count')
+        plt.title(f'Histogram Calories (Fold {i+1} - Validation)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_validation_heartbeat), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_validation_heartbeat), color='crimson')
+        plt.xlabel('Heartbeat')
+        plt.ylabel('count')
+        plt.title(f'Histogram Heartbeat (Fold {i+1} - Validation)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_validation_sleep), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_validation_sleep), color='crimson')
+        plt.xlabel('Sleep')
+        plt.ylabel('count')
+        plt.title(f'Histogram Sleep (Fold {i+1} - Validation)')
+        plt.draw()
+
+        figure, axis = plt.subplots(1,1)
+        sns.histplot(data=np.array(current_fold_validation_spo2), kde=False, stat='count')
+        # sns.kdeplot(data=np.array(current_fold_validation_spo2), color='crimson')
+        plt.xlabel('SpO2')
+        plt.ylabel('count')
+        plt.title(f'Histogram SpO2 (Fold {i+1} - Validation)')
+        plt.draw()
 
     # train
     train_edge_index = torch.tensor(([current_fold_train_list1, current_fold_train_list2]), dtype=torch.long)
@@ -1170,6 +1412,7 @@ test_label = np.array([
 [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0],
 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 ])
+test_label = test_label[:,5]
 test_graph = Data(x = torch.from_numpy(features_array).float(), edge_index = test_edge_index, y = torch.from_numpy(test_label).float())
 
 
@@ -1182,6 +1425,6 @@ print(f'----------------------Binary Cross Entropy Loss----------------------')
 with open('output3.txt', 'a') as f:
     f.writelines(f'\n----------------------Binary Cross Entropy Loss----------------------\n')
     f.close() 
-# test(test_graph,model2_2)
+test(test_graph,model2_2)
 
-# plt.show()
+plt.show()
