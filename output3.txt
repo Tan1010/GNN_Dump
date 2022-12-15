@@ -2457,3 +2457,32 @@ Overall Validation Recall: 1.0
 ----------------------Binary Cross Entropy Loss----------------------
 Overall Test Precision: 0.25
 Overall Test Recall: 1.0
+Overall Train Precision: 0.5684210526315789
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5769230769230769
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.54
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.5
+Overall Validation Recall: 1.0
+
+Overall Train Precision: 0.5625
+Overall Train Recall: 1.0
+
+Overall Validation Precision: 0.4230769230769231
+Overall Validation Recall: 1.0
+
+
+================Testing================
+----------------------Binary Cross Entropy Loss----------------------
+Overall Test Precision: 0.25
+Overall Test Recall: 1.0
