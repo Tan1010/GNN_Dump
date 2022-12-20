@@ -545,9 +545,9 @@ class GCN(nn.Module):
     def __init__(self, in_feats, h_feats):
         super(GCN, self).__init__()
         hidden_feats = math.floor((h_feats+in_feats)/2)
-        self.conv1 = GCNConv(in_feats, hidden_feats)
+        self.conv1 = GCNConv(in_feats, in_feats)
         # self.conv2 = GCNConv(hidden_feats, hidden_feats)
-        self.conv2 = GCNConv(hidden_feats, h_feats)
+        self.conv2 = GCNConv(in_feats, h_feats)
 
 
     def forward(self, g, in_feat):
@@ -599,7 +599,8 @@ stopped_epoch = [float("inf"), float("inf"), float("inf"), float("inf")]
 
 def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=True, testing=False):
     
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     tp=0
     fp=0
     tn=0
@@ -946,8 +947,8 @@ def test(g, model):
 
     # labels = labels[:, 5]
     final_emb, final_emb_clone = model(g, features)
-    # print(f'final_emb_clone: {final_emb_clone}')
-    # print(f'labels: {labels}')
+    print(f'final_emb_clone: {final_emb_clone}')
+    print(f'labels: {labels}')
 
     # for class 6 classification
     labels = np.reshape(labels, (len(labels), 1))
