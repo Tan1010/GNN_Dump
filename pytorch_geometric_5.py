@@ -546,8 +546,8 @@ class GCN(nn.Module):
         super(GCN, self).__init__()
         hidden_feats = math.floor((h_feats+in_feats)/2)
         self.conv1 = GCNConv(in_feats, hidden_feats)
-        self.conv2 = GCNConv(hidden_feats, hidden_feats)
-        self.conv3 = GCNConv(hidden_feats, h_feats)
+        # self.conv2 = GCNConv(hidden_feats, hidden_feats)
+        self.conv2 = GCNConv(hidden_feats, h_feats)
 
 
     def forward(self, g, in_feat):
@@ -556,11 +556,11 @@ class GCN(nn.Module):
         h = torch.relu(h) 
         
         # h = self.conv2(g, h)
-        h = self.conv2(h, g.edge_index)
-        h = torch.relu(h)
+        # h = self.conv2(h, g.edge_index)
+        # h = torch.relu(h)
 
         # h = self.conv3(g, h)
-        h = self.conv3(h, g.edge_index)
+        h = self.conv2(h, g.edge_index)
         h = torch.sigmoid(h)
         
         h_clone = torch.clone(h)
@@ -631,8 +631,11 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
     epoch = 100
     focal_loss = FocalLoss()
 
+    early_stop = False
 
     for e in range(epoch):
+        if early_stop:
+            break
         tp = 0
         fp = 0
         tn = 0
