@@ -600,7 +600,8 @@ stopped_epoch = [float("inf"), float("inf"), float("inf"), float("inf")]
 def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=True, testing=False):
     
     # optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.1)
     tp=0
     fp=0
     tn=0
