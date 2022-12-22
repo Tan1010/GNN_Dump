@@ -5,6 +5,7 @@
 import pandas as pd
 import math
 import numpy as np
+import scipy.stats as stats
 import datetime as dt
 import re
 
@@ -649,9 +650,9 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
         #     for name, param in model.named_parameters():
         #         if param.requires_grad:
         #             print(name, param.data)
-        # #     print(f'Weight 1: {model.conv1.weight.grad}')
-        # #     print(f'Weight 2: {model.conv2.weight.grad}')
-        # #     print(f'Weight 3: {model.conv3.weight.grad}')
+        #     print(f'Weight 1: {model.conv1.weight.grad}')
+        #     print(f'Weight 2: {model.conv2.weight.grad}')
+        #     print(f'Weight 3: {model.conv3.weight.grad}')
 
         # Forward
         final_emb, final_emb_clone = model(g, features)
@@ -936,54 +937,55 @@ def validate(g, model, loss_function,fold=0, fold_no=0):
     return loss, validation_precise, validation_rec
 
 def test(g, model):
-    test_tp = 0
-    test_fp = 0
-    test_tn = 0
-    test_fn = 0
+    # test_tp = 0
+    # test_fp = 0
+    # test_tn = 0
+    # test_fn = 0
 
-    # features = g.ndata['h']
-    # labels = g.ndata['labels']
+    # get features & labels
     features = g.x
     labels = g.y
-
-    # labels = labels[:, 5]
+   
     final_emb, final_emb_clone = model(g, features)
-    print(f'final_emb_clone: {final_emb_clone}')
-    print(f'labels: {labels}')
+    # for name, param in model.named_parameters():
+    #     if param.requires_grad:
+    #         print(name, param.data)
+    final_emb = final_emb[-1]
+    final_emb_clone = final_emb_clone[-1]
 
     # for class 6 classification
     labels = np.reshape(labels, (len(labels), 1))
+    labels = labels[-1]
+
+    # for row in range(final_emb_clone.shape[0]):
+    #     if final_emb_clone[row] == 1.0 and labels[row] == 1.0:
+    #         test_tp +=1
+    #     elif final_emb_clone[row] == 1.0 and labels[row] == 0.0:
+    #         test_fp +=1
+    #     elif final_emb_clone[row] == 0.0 and labels[row] == 0.0:
+    #         test_tn+=1
+    #     elif final_emb_clone[row] == 0.0 and labels[row] == 1.0:
+    #         test_fn+=1
+    print(f"\nFinal Embedding: {final_emb}")
+    print(f"Final Embedding: {final_emb_clone}")
+    print(f"Labels: {labels}")
+    return final_emb_clone
+    # try:
+    #     test_precise =test_tp/(test_tp+test_fp)
+    #     test_rec = test_tp/(test_tp+test_fn)
+    # except:
+    #     test_precise = 0
+    #     test_rec = 0
 
 
-    for row in range(final_emb_clone.shape[0]):
-        if final_emb_clone[row] == 1.0 and labels[row] == 1.0:
-            test_tp +=1
-        elif final_emb_clone[row] == 1.0 and labels[row] == 0.0:
-            test_fp +=1
-        elif final_emb_clone[row] == 0.0 and labels[row] == 0.0:
-            test_tn+=1
-        elif final_emb_clone[row] == 0.0 and labels[row] == 1.0:
-            test_fn+=1
-    # print(f"\nFinal Embedding: {final_emb}")
-    # print(f"\nFinal Embedding: {final_emb_clone}")
-    # print(f"\nLabels: {labels}")
-
-    try:
-        test_precise =test_tp/(test_tp+test_fp)
-        test_rec = test_tp/(test_tp+test_fn)
-    except:
-        test_precise = 0
-        test_rec = 0
-
-
-    # test_f1_score = (2 * test_precise * test_rec) / (test_precise + test_rec) 
-    print(f"Overall Test Precision: {test_precise}")    
-    print(f"Overall Test Recall: {test_rec}\n")  
-    # print(f"Test F1 Score: {test_f1_score}")  
-    # with open('output3.txt', 'a') as f:
-    #     f.writelines(f"Overall Test Precision: {test_precise}\n")    
-    #     f.writelines(f"Overall Test Recall: {test_rec}\n")  
-    #     f.close() 
+    # # test_f1_score = (2 * test_precise * test_rec) / (test_precise + test_rec) 
+    # print(f"Overall Test Precision: {test_precise}")    
+    # print(f"Overall Test Recall: {test_rec}\n")  
+    # # print(f"Test F1 Score: {test_f1_score}")  
+    # # with open('output3.txt', 'a') as f:
+    # #     f.writelines(f"Overall Test Precision: {test_precise}\n")    
+    # #     f.writelines(f"Overall Test Recall: {test_rec}\n")  
+    # #     f.close() 
 
 ######################### train #####################################################
 open("output4.txt", "w").close()
@@ -1025,7 +1027,7 @@ for i in range(total_nodes):
             break
 
 print(f'no positive: {no_positive}')      
-print(f'no negative: {no_negative}')      
+print(f'no negative: {no_negative}\n')      
 node_labels = np.array(node_labels)
 features = np.array(features)
 
@@ -1055,8 +1057,6 @@ feat_label_corr_matrix = df_features_labels_concat.corr()
 # sns.heatmap(feat_label_corr_matrix, annot=True)
 # plt.show()
 # exit()
-
-
 
 # 4 fold
 k=4
@@ -1123,7 +1123,7 @@ for i in range(k):
             current_fold_validation_labels.append(node_labels[j])
         if j in total_train_nodes_index:
             current_fold_train_labels.append(node_labels[j])
-
+    
 
     # change validation index
     no_validation_nodes = len(total_validation_nodes_index)
@@ -1197,8 +1197,23 @@ for i in range(k):
     current_fold_validation_heartbeat = current_fold_validation_features[:, 3]
     current_fold_validation_sleep = current_fold_validation_features[:, 4]
     current_fold_validation_spo2 = current_fold_validation_features[:, 5]
+    
+    # find wasserstein distance
+    was_steps = stats.wasserstein_distance(current_fold_train_steps, current_fold_validation_steps)
+    was_runDistance = stats.wasserstein_distance(current_fold_train_runDistance, current_fold_validation_runDistance)
+    was_calories = stats.wasserstein_distance(current_fold_train_calories, current_fold_validation_calories)
+    was_heartbeat = stats.wasserstein_distance(current_fold_train_heartbeat, current_fold_validation_heartbeat)
+    was_sleep = stats.wasserstein_distance(current_fold_train_sleep, current_fold_validation_sleep)
+    was_spo2 = stats.wasserstein_distance(current_fold_train_spo2, current_fold_validation_spo2)
 
-
+    print(f'Fold {i+1}')
+    # print(f'Wasserstein distance - steps: {round(was_steps, 4)}')
+    # print(f'Wasserstein distance - runDistance: {round(was_runDistance, 4)}')
+    # print(f'Wasserstein distance - calories: {round(was_calories, 4)}')
+    # print(f'Wasserstein distance - heartbeat: {round(was_heartbeat, 4)}')
+    # print(f'Wasserstein distance - sleep: {round(was_sleep, 4)}')
+    # print(f'Wasserstein distance - spo2: {round(was_spo2, 4)}\n')
+        
     # training mean & std
     current_fold_train_steps_mean = np.mean(np.array(current_fold_train_steps))
     current_fold_train_steps_std = np.std(np.array(current_fold_train_steps))
@@ -1237,6 +1252,10 @@ for i in range(k):
 
     current_fold_validation_spo2_mean = np.mean(np.array(current_fold_validation_spo2))
     current_fold_validation_spo2_std = np.std(np.array(current_fold_validation_spo2))
+
+    # print pdf
+    # plt.plot(x, stats.norm.pdf(x,loc=x_loc, scale=x_scale))
+
 
     # # print out mean & std
     # print(f'Mean steps (training): {round(current_fold_train_steps_mean, 4)}')
@@ -1395,31 +1414,28 @@ for i in range(k):
 
     # train
     train_edge_index = torch.tensor(([current_fold_train_list1, current_fold_train_list2]), dtype=torch.long)
-    train_edge_index = add_self_loops(edge_index = train_edge_index)[0]
+    train_edge_index = add_self_loops(edge_index = train_edge_index, num_nodes=len(current_fold_train_labels))[0]
     train_graph = Data(x = torch.from_numpy(current_fold_train_features).float(), edge_index = train_edge_index, y = torch.from_numpy(current_fold_train_labels).float())
 
     validation_edge_index = torch.tensor(([current_fold_validation_list1, current_fold_validation_list2]), dtype=torch.long)
-    validation_edge_index = add_self_loops(edge_index = validation_edge_index)[0]
+    validation_edge_index = add_self_loops(edge_index = validation_edge_index, num_nodes=len(current_fold_validation_labels))[0]
     validation_graph = Data(x = torch.from_numpy(current_fold_validation_features).float(), edge_index = validation_edge_index, y = torch.from_numpy(current_fold_validation_labels).float())
 
     model = GCN(6, 1)
-    train(g=train_graph, validate_g =validation_graph, model=model, loss_function = 'ce', fold=k, fold_no=i)
+    # train(g=train_graph, validate_g =validation_graph, model=model, loss_function = 'ce', fold=k, fold_no=i)
 
 # ######################### test# #####################################################
 print(f'Testing')
 # this is for class 6 classification
-# node_labels = node_labels[:,5]
+node_labels = node_labels[:,5]
+overall_training_features = np.delete(features, 1, 1)
 train_edge_index_2 = torch.tensor(([node_list1, node_list2]), dtype=torch.long)
-train_edge_index_2 = add_self_loops(edge_index = train_edge_index_2)[0]
-train_graph_2 = Data(x = torch.from_numpy(features).float(), edge_index = train_edge_index_2, y = torch.from_numpy(node_labels).float())
+train_edge_index_2 = add_self_loops(edge_index = train_edge_index_2, num_nodes=len(node_labels))[0]
+train_graph_2 = Data(x = torch.from_numpy(overall_training_features).float(), edge_index = train_edge_index_2, y = torch.from_numpy(node_labels).float())
 
+model2 = GCN(6, 1)
+train(g = train_graph_2, model = model2, loss_function = 'ce', to_print=True, testing=True)
 
-model2_2 = GCN(6, 1)
-# train(g = train_graph_2, model = model2_2, loss_function = 'ce', to_print=False, testing=True)
-
-
-# test
-test_graph= dgl.graph(([0,1,0,3,1,2], [1,0,3,0,2,1]), num_nodes=5)
 
 features_array = np.array([
     [1028, 52, 28, 87, average_sleep, 97],
@@ -1431,15 +1447,11 @@ features_array = np.array([
 
 for i in range(features_array.shape[0]):
     features_array[i,0] = round((features_array[i,0] - min_steps)/(max_steps - min_steps),10)
-    # features_array[i,1] = round((features_array[i,1] - min_distance)/(max_distance - min_distance),10)
     features_array[i,1] = round((features_array[i,1] - min_runDistance)/(max_runDistance - min_runDistance),10)
     features_array[i,2] = round((features_array[i,2] - min_calories)/(max_calories - min_calories),10)
     features_array[i,3] = round((features_array[i,3] - min_heartbeat)/(max_heartbeat - min_heartbeat),10)
     features_array[i,4] = round((features_array[i,4] - min_sleep)/(max_sleep - min_sleep),10)
-    features_array[i,5] = features_array[i,5]/10
-    
-test_edge_index = torch.tensor(([0,1,0,3,1,2], [1,0,3,0,2,1]), dtype=torch.long)
-test_edge_index = add_self_loops(edge_index = test_edge_index)[0]
+    features_array[i,5] = features_array[i,5]/100
 
 test_label = np.array([
 [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -1449,12 +1461,92 @@ test_label = np.array([
 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 ])
 test_label = test_label[:,5]
-test_graph = Data(x = torch.from_numpy(features_array).float(), edge_index = test_edge_index, y = torch.from_numpy(test_label).float())
+
+num_of_nodes = len(node_labels)
+test_data_index = num_of_nodes
+test_tp = 0
+test_fp = 0
+test_tn = 0
+test_fn = 0
+
+for i in range(len(features_array)):
+    test_data_features = [features_array[i]]
+    test_data_labels = [test_label[i]]
+    overall_features_include_test = np.concatenate((overall_training_features, test_data_features))
+    overall_labels_include_test = np.concatenate((node_labels, test_data_labels))
+    overall_node_list1_include_test = np.copy(node_list1)
+    overall_node_list2_include_test = np.copy(node_list2)
+    
+    for j in range(num_of_nodes):
+        if test_data_labels == node_labels[j]:
+            overall_node_list1_include_test = np.concatenate((overall_node_list1_include_test,[test_data_index]))
+            overall_node_list2_include_test = np.concatenate((overall_node_list2_include_test,[j]))
+            overall_node_list1_include_test = np.concatenate((overall_node_list1_include_test,[j]))
+            overall_node_list2_include_test = np.concatenate((overall_node_list2_include_test,[test_data_index]))
+    
+    overall_test_edge_index = torch.tensor(([overall_node_list1_include_test, overall_node_list2_include_test]), dtype=torch.long)
+    overall_test_edge_index = add_self_loops(edge_index = overall_test_edge_index, num_nodes=len(overall_labels_include_test))[0]
+    
+    test_graph = Data(x = torch.from_numpy(overall_features_include_test).float(), edge_index = overall_test_edge_index, y = torch.from_numpy(overall_labels_include_test).float())
+    pred = test(test_graph,model2)
+
+    if pred == 1.0 and test_data_labels[0] == 1.0:
+        test_tp +=1
+    elif pred == 1.0 and test_data_labels[0] == 0.0:
+        test_fp +=1
+    elif pred == 0.0 and test_data_labels[0] == 0.0:
+        test_tn+=1
+    elif pred == 0.0 and test_data_labels[0] == 1.0:
+        test_fn+=1
+
+try:
+    test_precise =test_tp/(test_tp+test_fp)
+    test_rec = test_tp/(test_tp+test_fn)
+except:
+    test_precise = 0
+    test_rec = 0
+
+
+print(f"Overall Test Precision: {test_precise}")    
+print(f"Overall Test Recall: {test_rec}\n")  
+
+
+# # test
+# test_graph= dgl.graph(([0,1,0,3,1,2], [1,0,3,0,2,1]), num_nodes=5)
+
+# features_array = np.array([
+#     [1028, 52, 28, 87, average_sleep, 97],
+#     [21, 41, 12, 81, 1.167, 100],
+#     [947, 142, 26, 77, 8.283, 96],
+#     [1457, 288, 33, 92, 9.983, 92],
+#     [7402, 266, 127, 94, average_sleep, 95],
+# ])
+
+# for i in range(features_array.shape[0]):
+#     features_array[i,0] = round((features_array[i,0] - min_steps)/(max_steps - min_steps),10)
+#     features_array[i,1] = round((features_array[i,1] - min_runDistance)/(max_runDistance - min_runDistance),10)
+#     features_array[i,2] = round((features_array[i,2] - min_calories)/(max_calories - min_calories),10)
+#     features_array[i,3] = round((features_array[i,3] - min_heartbeat)/(max_heartbeat - min_heartbeat),10)
+#     features_array[i,4] = round((features_array[i,4] - min_sleep)/(max_sleep - min_sleep),10)
+#     features_array[i,5] = features_array[i,5]/100
+    
+# test_edge_index = torch.tensor(([0,1,0,3,1,2], [1,0,3,0,2,1]), dtype=torch.long)
+# test_edge_index = add_self_loops(edge_index = test_edge_index)[0]
+
+# test_label = np.array([
+# [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+# [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+# [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0],
+# [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0],
+# [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+# ])
+# test_label = test_label[:,5]
+# test_graph = Data(x = torch.from_numpy(features_array).float(), edge_index = test_edge_index, y = torch.from_numpy(test_label).float())
 
 
 
-print(f'----------------------Binary Cross Entropy Loss----------------------')
+# print(f'----------------------Binary Cross Entropy Loss----------------------')
 
-test(test_graph,model2_2)
+# test(test_graph,model2)
 
-plt.show()
+# plt.show()
