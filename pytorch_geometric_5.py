@@ -456,7 +456,6 @@ for date in date_list:
             continue
 
 
-
 #########################################################################
 #########################################################################
 #########################################################################
@@ -546,21 +545,23 @@ class GCN(nn.Module):
     def __init__(self, in_feats, h_feats):
         super(GCN, self).__init__()
         hidden_feats = math.floor((h_feats+in_feats)/2)
-        self.conv1 = GCNConv(in_feats, in_feats)
+        # 3 layers
+        # self.conv1 = GCNConv(in_feats, hidden_feats)
         # self.conv2 = GCNConv(hidden_feats, hidden_feats)
+        # self.conv3 = GCNConv(hidden_feats, h_feats)
+
+        # 2 layers
+        self.conv1 = GCNConv(in_feats, in_feats)
         self.conv2 = GCNConv(in_feats, h_feats)
 
 
     def forward(self, g, in_feat):
-        # h = self.conv1(g, in_feat)
         h = self.conv1(g.x, g.edge_index)
         h = torch.relu(h) 
         
-        # h = self.conv2(g, h)
         # h = self.conv2(h, g.edge_index)
         # h = torch.relu(h)
 
-        # h = self.conv3(g, h)
         h = self.conv2(h, g.edge_index)
         h = torch.sigmoid(h)
         
@@ -603,6 +604,7 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
     # optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
     # optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.1)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
     tp=0
     fp=0
     tn=0
@@ -621,7 +623,7 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
     validation_recall = []
 
     best_validation_loss, best_validation_epoch = None, None
-    max_stagnation = 10
+    max_stagnation = 20
 
 
     f1 = []
@@ -714,24 +716,16 @@ def train(g, model, loss_function, validate_g=None, fold=0, fold_no=0, to_print=
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        if validate_g != None:
+            scheduler.step(validation_loss)
     
     if to_print:
         print(f"Overall Train Precision: {overall_precision[-1]}")    
         print(f"Overall Train Recall: {overall_recall[-1]}")    
-       
-        # with open('output3.txt', 'a') as f:  
-        #     f.writelines(f"Overall Train Precision: {overall_precision[-1]}\n")    
-        #     f.writelines(f"Overall Train Recall: {overall_recall[-1]}\n")  
-        #     f.close() 
+
         if validate_g != None:
             print(f"\nOverall Validation Precision: {validation_overall_precision[-1]}")    
             print(f"Overall Validation Recall: {validation_overall_recall[-1]}\n")  
-            # with open('output3.txt', 'a') as f:
-            #     f.writelines(f"\nOverall Validation Precision: {validation_overall_precision[-1]}\n")    
-            #     f.writelines(f"Overall Validation Recall: {validation_overall_recall[-1]}\n\n")  
-            #     f.close() 
-        # print(f"Train F1 Score: {f1[-1]}")    
-            # validate
 
 
     validation_loss_arr= [loss.detach().numpy() for loss in validation_loss_arr]
@@ -992,6 +986,7 @@ open("output4.txt", "w").close()
 
 features=[]
 node_labels=[]
+node_emails=[]
 
 no_positive = [0,0,0,0,0,0,0,0,0]
 no_negative = [0,0,0,0,0,0,0,0,0]
@@ -1000,8 +995,11 @@ for i in range(total_nodes):
     current_patient_all_data = patient_vitalsigns_symptoms[i]
     current_patient_email = patient_vitalsigns_symptoms[i]['email']
 
+    # get next day symptoms
     for j in range(i+1, len(patient_vitalsigns_symptoms)):
         if patient_vitalsigns_symptoms[j]['email'] == current_patient_email:
+            node_emails.append(current_patient_email)
+
             patient_symptoms = patient_vitalsigns_symptoms[j]['symptoms']
             
             temp_node_labels = [0,0,0,0,0,0,0,0,0]
@@ -1025,6 +1023,7 @@ for i in range(total_nodes):
             ]
             features.append(temp_features)
             break
+
 
 print(f'no positive: {no_positive}')      
 print(f'no negative: {no_negative}\n')      
@@ -1061,6 +1060,9 @@ feat_label_corr_matrix = df_features_labels_concat.corr()
 # 4 fold
 k=4
 split_len = len(node_labels)//4 
+
+all_fold_train_features = []
+all_fold_validation_features = []
 
 for i in range(k):
     if i == 0:
@@ -1113,9 +1115,21 @@ for i in range(k):
         if j in total_train_nodes_index:
             current_fold_train_features.append(features[j])
 
+    # use 4 features
+    # current_fold_validation_features = np.delete(current_fold_validation_features, 0, 1)
+    # current_fold_validation_features = np.delete(current_fold_validation_features, 0, 1)
+    # current_fold_validation_features = np.delete(current_fold_validation_features, 0, 1)
+    # current_fold_train_features = np.delete(current_fold_train_features, 0, 1)
+    # current_fold_train_features = np.delete(current_fold_train_features, 0, 1)
+    # current_fold_train_features = np.delete(current_fold_train_features, 0, 1)
+
+    # use 6 features
     current_fold_validation_features = np.delete(current_fold_validation_features, 1, 1)
     current_fold_train_features = np.delete(current_fold_train_features, 1, 1)
 
+
+    all_fold_validation_features.append(current_fold_validation_features)
+    all_fold_train_features.append(current_fold_train_features)
 
     # labels
     for j in range(len(node_labels)):
@@ -1198,7 +1212,7 @@ for i in range(k):
     current_fold_validation_sleep = current_fold_validation_features[:, 4]
     current_fold_validation_spo2 = current_fold_validation_features[:, 5]
     
-    # find wasserstein distance
+    # find wasserstein distance between trianng & validation
     was_steps = stats.wasserstein_distance(current_fold_train_steps, current_fold_validation_steps)
     was_runDistance = stats.wasserstein_distance(current_fold_train_runDistance, current_fold_validation_runDistance)
     was_calories = stats.wasserstein_distance(current_fold_train_calories, current_fold_validation_calories)
@@ -1207,12 +1221,12 @@ for i in range(k):
     was_spo2 = stats.wasserstein_distance(current_fold_train_spo2, current_fold_validation_spo2)
 
     print(f'Fold {i+1}')
-    # print(f'Wasserstein distance - steps: {round(was_steps, 4)}')
-    # print(f'Wasserstein distance - runDistance: {round(was_runDistance, 4)}')
-    # print(f'Wasserstein distance - calories: {round(was_calories, 4)}')
-    # print(f'Wasserstein distance - heartbeat: {round(was_heartbeat, 4)}')
-    # print(f'Wasserstein distance - sleep: {round(was_sleep, 4)}')
-    # print(f'Wasserstein distance - spo2: {round(was_spo2, 4)}\n')
+    print(f'Wasserstein distance - steps: {round(was_steps, 4)}')
+    print(f'Wasserstein distance - runDistance: {round(was_runDistance, 4)}')
+    print(f'Wasserstein distance - calories: {round(was_calories, 4)}')
+    print(f'Wasserstein distance - heartbeat: {round(was_heartbeat, 4)}')
+    print(f'Wasserstein distance - sleep: {round(was_sleep, 4)}')
+    print(f'Wasserstein distance - spo2: {round(was_spo2, 4)}\n')
         
     # training mean & std
     current_fold_train_steps_mean = np.mean(np.array(current_fold_train_steps))
@@ -1422,19 +1436,58 @@ for i in range(k):
     validation_graph = Data(x = torch.from_numpy(current_fold_validation_features).float(), edge_index = validation_edge_index, y = torch.from_numpy(current_fold_validation_labels).float())
 
     model = GCN(6, 1)
-    # train(g=train_graph, validate_g =validation_graph, model=model, loss_function = 'ce', fold=k, fold_no=i)
+    train(g=train_graph, validate_g =validation_graph, model=model, loss_function = 'ce', fold=k, fold_no=i)
+
+# wasserstein distance between folds
+train_was_distance_between_fold_1_2 = stats.wasserstein_distance(all_fold_train_features[0].flatten(), all_fold_train_features[1].flatten())
+train_was_distance_between_fold_1_3 = stats.wasserstein_distance(all_fold_train_features[0].flatten(), all_fold_train_features[2].flatten())
+train_was_distance_between_fold_1_4 = stats.wasserstein_distance(all_fold_train_features[0].flatten(), all_fold_train_features[3].flatten())
+train_was_distance_between_fold_2_3 = stats.wasserstein_distance(all_fold_train_features[1].flatten(), all_fold_train_features[2].flatten())
+train_was_distance_between_fold_2_4 = stats.wasserstein_distance(all_fold_train_features[1].flatten(), all_fold_train_features[3].flatten())
+train_was_distance_between_fold_3_4 = stats.wasserstein_distance(all_fold_train_features[2].flatten(), all_fold_train_features[3].flatten())
+
+validation_was_distance_between_fold_1_2 = stats.wasserstein_distance(all_fold_validation_features[0].flatten(), all_fold_validation_features[1].flatten())
+validation_was_distance_between_fold_1_3 = stats.wasserstein_distance(all_fold_validation_features[0].flatten(), all_fold_validation_features[2].flatten())
+validation_was_distance_between_fold_1_4 = stats.wasserstein_distance(all_fold_validation_features[0].flatten(), all_fold_validation_features[3].flatten())
+validation_was_distance_between_fold_2_3 = stats.wasserstein_distance(all_fold_validation_features[1].flatten(), all_fold_validation_features[2].flatten())
+validation_was_distance_between_fold_2_4 = stats.wasserstein_distance(all_fold_validation_features[1].flatten(), all_fold_validation_features[3].flatten())
+validation_was_distance_between_fold_3_4 = stats.wasserstein_distance(all_fold_validation_features[2].flatten(), all_fold_validation_features[3].flatten())
+
+print(f'train_was_distance_between_fold_1_2: {round(train_was_distance_between_fold_1_2, 4)}')
+print(f'train_was_distance_between_fold_1_3: {round(train_was_distance_between_fold_1_3, 4)}')
+print(f'train_was_distance_between_fold_1_4: {round(train_was_distance_between_fold_1_4, 4)}')
+print(f'train_was_distance_between_fold_2_3: {round(train_was_distance_between_fold_2_3, 4)}')
+print(f'train_was_distance_between_fold_2_4: {round(train_was_distance_between_fold_2_4, 4)}')
+print(f'train_was_distance_between_fold_3_4: {round(train_was_distance_between_fold_3_4, 4)}\n')
+
+print(f'validation_was_distance_between_fold_1_2: {round(validation_was_distance_between_fold_1_2, 4)}')
+print(f'validation_was_distance_between_fold_1_3: {round(validation_was_distance_between_fold_1_3, 4)}')
+print(f'validation_was_distance_between_fold_1_4: {round(validation_was_distance_between_fold_1_4, 4)}')
+print(f'validation_was_distance_between_fold_2_3: {round(validation_was_distance_between_fold_2_3, 4)}')
+print(f'validation_was_distance_between_fold_2_4: {round(validation_was_distance_between_fold_2_4, 4)}')
+print(f'validation_was_distance_between_fold_3_4: {round(validation_was_distance_between_fold_3_4, 4)}\n')
+
 
 # ######################### test# #####################################################
 print(f'Testing')
 # this is for class 6 classification
-node_labels = node_labels[:,5]
+# node_labels = node_labels[:,5]
+
+# use 6 features
 overall_training_features = np.delete(features, 1, 1)
+
+# use 4 features
+# overall_training_features = np.delete(features, 0, 1)
+# overall_training_features = np.delete(overall_training_features, 0, 1)
+# overall_training_features = np.delete(overall_training_features, 0, 1)
 train_edge_index_2 = torch.tensor(([node_list1, node_list2]), dtype=torch.long)
 train_edge_index_2 = add_self_loops(edge_index = train_edge_index_2, num_nodes=len(node_labels))[0]
-train_graph_2 = Data(x = torch.from_numpy(overall_training_features).float(), edge_index = train_edge_index_2, y = torch.from_numpy(node_labels).float())
+train_graph_2 = Data(x = torch.from_numpy(overall_training_features).float(), edge_index = train_edge_index_2, y = torch.from_numpy(node_labels[:,5]).float())
 
 model2 = GCN(6, 1)
 train(g = train_graph_2, model = model2, loss_function = 'ce', to_print=True, testing=True)
+
+
 
 
 features_array = np.array([
@@ -1443,7 +1496,17 @@ features_array = np.array([
     [947, 142, 26, 77, 8.283, 96],
     [1457, 288, 33, 92, 9.983, 92],
     [7402, 266, 127, 94, average_sleep, 95],
+    [131, 78, 7, 64, 10.883, 100],
+    [746, 122, 20, 69, 7.767, 94],
+    [287, 66, 14, 70, 6.85, 97],
 ])
+# features_array = np.array([
+#     [28, 87, average_sleep, 97],
+#     [12, 81, 1.167, 100],
+#     [26, 77, 8.283, 96],
+#     [33, 92, 9.983, 92],
+#     [127, 94, average_sleep, 95],
+# ])
 
 for i in range(features_array.shape[0]):
     features_array[i,0] = round((features_array[i,0] - min_steps)/(max_steps - min_steps),10)
@@ -1452,6 +1515,11 @@ for i in range(features_array.shape[0]):
     features_array[i,3] = round((features_array[i,3] - min_heartbeat)/(max_heartbeat - min_heartbeat),10)
     features_array[i,4] = round((features_array[i,4] - min_sleep)/(max_sleep - min_sleep),10)
     features_array[i,5] = features_array[i,5]/100
+# for i in range(features_array.shape[0]):
+#     features_array[i,0] = round((features_array[i,0] - min_calories)/(max_calories - min_calories),10)
+#     features_array[i,1] = round((features_array[i,1] - min_heartbeat)/(max_heartbeat - min_heartbeat),10)
+#     features_array[i,2] = round((features_array[i,2] - min_sleep)/(max_sleep - min_sleep),10)
+#     features_array[i,3] = features_array[i,3]/100
 
 test_label = np.array([
 [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -1459,8 +1527,11 @@ test_label = np.array([
 [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0],
 [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0],
 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+[0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+[0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
 ])
-test_label = test_label[:,5]
+# test_label = test_label[:,5]
 
 num_of_nodes = len(node_labels)
 test_data_index = num_of_nodes
@@ -1471,14 +1542,14 @@ test_fn = 0
 
 for i in range(len(features_array)):
     test_data_features = [features_array[i]]
-    test_data_labels = [test_label[i]]
     overall_features_include_test = np.concatenate((overall_training_features, test_data_features))
+    test_data_labels = [test_label[i]]
     overall_labels_include_test = np.concatenate((node_labels, test_data_labels))
     overall_node_list1_include_test = np.copy(node_list1)
     overall_node_list2_include_test = np.copy(node_list2)
-    
+   
     for j in range(num_of_nodes):
-        if test_data_labels == node_labels[j]:
+        if np.any((test_data_labels == node_labels[j])[0] == True):
             overall_node_list1_include_test = np.concatenate((overall_node_list1_include_test,[test_data_index]))
             overall_node_list2_include_test = np.concatenate((overall_node_list2_include_test,[j]))
             overall_node_list1_include_test = np.concatenate((overall_node_list1_include_test,[j]))
@@ -1487,16 +1558,16 @@ for i in range(len(features_array)):
     overall_test_edge_index = torch.tensor(([overall_node_list1_include_test, overall_node_list2_include_test]), dtype=torch.long)
     overall_test_edge_index = add_self_loops(edge_index = overall_test_edge_index, num_nodes=len(overall_labels_include_test))[0]
     
-    test_graph = Data(x = torch.from_numpy(overall_features_include_test).float(), edge_index = overall_test_edge_index, y = torch.from_numpy(overall_labels_include_test).float())
+    test_graph = Data(x = torch.from_numpy(overall_features_include_test).float(), edge_index = overall_test_edge_index, y = torch.from_numpy(overall_labels_include_test[:,5]).float())
     pred = test(test_graph,model2)
-
-    if pred == 1.0 and test_data_labels[0] == 1.0:
+    
+    if pred == 1.0 and test_data_labels[0][5] == 1.0:
         test_tp +=1
-    elif pred == 1.0 and test_data_labels[0] == 0.0:
+    elif pred == 1.0 and test_data_labels[0][5] == 0.0:
         test_fp +=1
-    elif pred == 0.0 and test_data_labels[0] == 0.0:
+    elif pred == 0.0 and test_data_labels[0][5] == 0.0:
         test_tn+=1
-    elif pred == 0.0 and test_data_labels[0] == 1.0:
+    elif pred == 0.0 and test_data_labels[0][5] == 1.0:
         test_fn+=1
 
 try:
@@ -1509,44 +1580,4 @@ except:
 
 print(f"Overall Test Precision: {test_precise}")    
 print(f"Overall Test Recall: {test_rec}\n")  
-
-
-# # test
-# test_graph= dgl.graph(([0,1,0,3,1,2], [1,0,3,0,2,1]), num_nodes=5)
-
-# features_array = np.array([
-#     [1028, 52, 28, 87, average_sleep, 97],
-#     [21, 41, 12, 81, 1.167, 100],
-#     [947, 142, 26, 77, 8.283, 96],
-#     [1457, 288, 33, 92, 9.983, 92],
-#     [7402, 266, 127, 94, average_sleep, 95],
-# ])
-
-# for i in range(features_array.shape[0]):
-#     features_array[i,0] = round((features_array[i,0] - min_steps)/(max_steps - min_steps),10)
-#     features_array[i,1] = round((features_array[i,1] - min_runDistance)/(max_runDistance - min_runDistance),10)
-#     features_array[i,2] = round((features_array[i,2] - min_calories)/(max_calories - min_calories),10)
-#     features_array[i,3] = round((features_array[i,3] - min_heartbeat)/(max_heartbeat - min_heartbeat),10)
-#     features_array[i,4] = round((features_array[i,4] - min_sleep)/(max_sleep - min_sleep),10)
-#     features_array[i,5] = features_array[i,5]/100
-    
-# test_edge_index = torch.tensor(([0,1,0,3,1,2], [1,0,3,0,2,1]), dtype=torch.long)
-# test_edge_index = add_self_loops(edge_index = test_edge_index)[0]
-
-# test_label = np.array([
-# [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-# [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
-# [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0],
-# [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0],
-# [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-# ])
-# test_label = test_label[:,5]
-# test_graph = Data(x = torch.from_numpy(features_array).float(), edge_index = test_edge_index, y = torch.from_numpy(test_label).float())
-
-
-
-# print(f'----------------------Binary Cross Entropy Loss----------------------')
-
-# test(test_graph,model2)
-
-# plt.show()
+plt.show()
